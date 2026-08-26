@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ERW cost model — 1 ha to 10,000 ha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#191612; --ink-soft:#4a443c; --paper:#f4f0e7; --card:#fbf9f3;
+    --line:#ded7c7; --slate:#2f6f7a; --slate-soft:#d7e7e8;
+    --removal:#3f6b4f; --warn:#b0490d; --warn-soft:#f0dcc7; --muted:#8a8272;
+    --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased;padding:26px 20px 60px}
+  .wrap{max-width:1200px;margin:0 auto}
+  header{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:22px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--slate);margin:0 0 8px}
+  h1{font-family:var(--display);font-weight:600;font-size:clamp(23px,3.4vw,34px);line-height:1.03;letter-spacing:-.015em;margin:0;max-width:22ch}
+  .sub{font-size:14px;color:var(--ink-soft);margin:11px 0 0;max-width:74ch}
+  .grid{display:grid;grid-template-columns:minmax(0,0.92fr) minmax(0,1.2fr);gap:24px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:3px}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .preset{font-family:var(--mono);font-size:11.5px;background:transparent;border:1px solid var(--line);color:var(--ink-soft);padding:7px 11px;border-radius:2px;cursor:pointer;transition:all .12s}
+  .preset:hover{border-color:var(--ink);color:var(--ink)}
+  .preset:focus-visible{outline:2px solid var(--slate);outline-offset:2px}
+  .panel-pad{padding:16px 18px 8px}
+  .group-title{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:15px 0 10px;display:flex;align-items:center;gap:10px}
+  .group-title::after{content:"";flex:1;height:1px;background:var(--line)}
+  .group-title:first-child{margin-top:2px}
+  .ctl{margin-bottom:13px}
+  .ctl-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:5px}
+  .ctl-head label{font-size:12.5px;color:var(--ink-soft);font-weight:500}
+  .val{display:flex;align-items:baseline;gap:2px;font-family:var(--mono);font-weight:600}
+  .val input{width:88px;text-align:right;font-family:var(--mono);font-weight:600;font-size:14px;color:var(--ink);background:transparent;border:none;border-bottom:1px solid var(--line);padding:1px 2px}
+  .val input:focus{outline:none;border-bottom-color:var(--slate)}
+  .val .unit{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--line);border-radius:2px;margin:6px 0 2px;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;background:var(--paper);border:2px solid var(--slate);cursor:pointer;transition:transform .1s}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--paper);border:2px solid var(--slate);cursor:pointer}
+  input[type=range]:focus-visible{outline:2px solid var(--slate);outline-offset:6px;border-radius:6px}
+  .readout{display:flex;flex-direction:column;gap:15px}
+  .headline{background:var(--ink);color:var(--paper);border-radius:3px;padding:18px 22px}
+  .headline .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#9fc0c4;margin:0}
+  .headline .big{font-family:var(--display);font-weight:600;font-size:clamp(30px,5vw,46px);line-height:1;letter-spacing:-.02em;margin:7px 0 3px;color:#fff}
+  .headline .big .u{font-size:15px;color:#9fc0c4;font-family:var(--mono);font-weight:500;margin-left:7px}
+  .headline .note{font-size:12px;color:#b7ac98;margin:2px 0 0;max-width:54ch}
+  .tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:12px 13px}
+  .tile.c{border-left:3px solid var(--removal)} .tile.m{border-left:3px solid var(--slate)} .tile.b{border-left:3px solid var(--warn)}
+  .tile .tk{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 5px}
+  .tile .tv{font-family:var(--display);font-weight:600;font-size:20px;line-height:1;letter-spacing:-.01em}
+  .tile .tv .u{font-size:10.5px;color:var(--muted);font-family:var(--mono);font-weight:500;margin-left:3px}
+  .tile.c .tv{color:var(--removal)}
+  .scale{padding:15px 16px}
+  .scale h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+  .scale .cap{font-size:11.5px;color:var(--muted);margin:0 0 10px}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono)}
+  th{font-family:var(--body);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:right;padding:5px 5px;border-bottom:1px solid var(--line);font-weight:600}
+  th:first-child{text-align:left}
+  td{font-size:12px;text-align:right;padding:7px 5px;border-bottom:1px dotted var(--line);color:var(--ink)}
+  td:first-child{text-align:left;font-family:var(--display);font-weight:600}
+  tr.break td{background:var(--slate-soft)}
+  tr.tierhead td{font-family:var(--body);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding-top:9px;border-bottom:none;font-weight:600}
+  .pos{color:var(--removal)} .neg{color:var(--warn)}
+  .foot{font-size:11px;color:var(--muted);margin-top:26px;padding-top:14px;border-top:1px solid var(--line);max-width:84ch}
+  .foot code{font-family:var(--mono);color:var(--ink-soft);background:var(--card);padding:1px 4px;border-radius:2px}
+  .beven{font-size:12px;padding:9px 12px;border-radius:2px;margin-top:2px;background:var(--warn-soft);color:#7a3a08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Ilha Carbon · ERW · cost &amp; return from 1 ha to 10,000 ha</p>
+    <h1>Where ERW stops being a science plot and becomes a business</h1>
+    <p class="sub">The full cost stack applied across scale, with realistic MRV, a fixed audit cost, and Puro's uncertainty discount. Watch the break-even hectares move as you change price and yield. Everything is indicative and grounded in 2026 field and market data.</p>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="presets">
+        <button class="preset" data-preset="verified">Verified case (€300)</button>
+        <button class="preset" data-preset="roadside">Roadside penalty</button>
+        <button class="preset" data-preset="floor">€60 floor</button>
+      </div>
+      <div class="panel-pad">
+        <div class="group-title">Weathering &amp; price</div>
+        <div class="ctl" data-c="rate" data-min="10" data-max="60" data-step="1" data-dec="0"><div class="ctl-head"><label>Basalt application rate</label><span class="val"><input><span class="unit">t/ha·yr</span></span></div><input type="range"></div>
+        <div class="ctl" data-c="yield" data-min="0.03" data-max="0.35" data-step="0.01" data-dec="2"><div class="ctl-head"><label>Creditable CO₂ per t basalt</label><span class="val"><input><span class="unit">tCO₂/t</span></span></div><input type="range"></div>
+        <div class="ctl" data-c="disc" data-min="0" data-max="50" data-step="1" data-dec="0"><div class="ctl-head"><label>Uncertainty discount</label><span class="val"><input><span class="unit">%</span></span></div><input type="range"></div>
+        <div class="ctl" data-c="price" data-min="40" data-max="450" data-step="10" data-dec="0"><div class="ctl-head"><label>Credit price</label><span class="val">€<input><span class="unit">/tCO₂</span></span></div><input type="range"></div>
+
+        <div class="group-title">Variable costs (per t basalt / per ha)</div>
+        <div class="ctl" data-c="rock" data-min="5" data-max="70" data-step="1" data-dec="0"><div class="ctl-head"><label>Basalt supply (ground, delivered)</label><span class="val">€<input><span class="unit">/t</span></span></div><input type="range"></div>
+        <div class="ctl" data-c="spread" data-min="2" data-max="30" data-step="1" data-dec="0"><div class="ctl-head"><label>Spreading</label><span class="val">€<input><span class="unit">/t</span></span></div><input type="range"></div>
+        <div class="ctl" data-c="mrv" data-min="0" data-max="900" data-step="20" data-dec="0"><div class="ctl-head"><label>MRV sampling &amp; labs (per ha)</label><span class="val">€<input><span class="unit">/ha·yr</span></span></div><input type="range"></div>
+
+        <div class="group-title">Fixed costs (whole project / yr)</div>
+        <div class="ctl" data-c="fixed" data-min="0" data-max="150000" data-step="5000" data-dec="0"><div class="ctl-head"><label>Verification audit + baseline</label><span class="val">€<input><span class="unit"></span></span></div><input type="range"></div>
+        <div class="ctl" data-c="setup" data-min="0" data-max="500000" data-step="10000" data-dec="0"><div class="ctl-head"><label>One-off setup (rock/soil char., kit)</label><span class="val">€<input><span class="unit"></span></span></div><input type="range"></div>
+      </div>
+    </div>
+
+    <div class="readout">
+      <div class="headline">
+        <p class="k">Break-even area at these settings</p>
+        <p class="big"><span id="o-beven">58</span><span class="u">ha</span></p>
+        <p class="note" id="o-bnote">Below this the fixed audit and baseline outweigh the margin, so the land is a research plot, not a credit business. Above it, every hectare adds profit.</p>
+      </div>
+      <div class="tiles">
+        <div class="tile c"><p class="tk">Creditable / ha·yr</p><p class="tv"><span id="o-perha">6.4</span><span class="u">tCO₂</span></p></div>
+        <div class="tile m"><p class="tk">Margin / ha (variable)</p><p class="tv">€<span id="o-vm">520</span></p></div>
+        <div class="tile b"><p class="tk">Cost / credit (excl. fixed)</p><p class="tv">€<span id="o-cpc">219</span></p></div>
+      </div>
+
+      <div class="panel scale">
+        <h3>Cost and return across scale</h3>
+        <p class="cap">Annual figures. Margin includes the whole-project fixed cost, so small areas can run negative.</p>
+        <table>
+          <thead><tr><th>Area</th><th>Basalt/yr</th><th>CO₂/yr</th><th>Revenue</th><th>Cost</th><th>Margin</th></tr></thead>
+          <tbody id="scaleBody"></tbody>
+        </table>
+        <div class="beven" id="o-flag"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">
+    <code>creditable CO₂/ha = rate × yield × (1 − discount)</code>; project cost = area × (rock + spreading + MRV) + fixed audit/baseline. Defaults sit near 2026 norms: ~40 t/ha basalt, a conservative ~0.2 tCO₂/t creditable, a 20% Puro-style uncertainty discount, MRV ~€480/ha (≈€60-80/tCO₂, per UK Grantham data), a ~€30k/yr verification audit, and a verified price near €300 (roadside/unverified projects sit far lower). The roadside tiers (≈1-500 ha) map to the EuroScut corridor; 500 ha and up is aggregated dairy pasture. This is a planning tool, not a quote.
+  </p>
+</div>
+<script>
+(function(){
+  "use strict";
+  var state={rate:40,yield:0.20,disc:20,price:300,rock:15,spread:8,mrv:480,fixed:30000,setup:80000};
+  var presets={
+    verified:{rate:40,yield:0.20,disc:20,price:300,rock:15,spread:8,mrv:480,fixed:30000},
+    roadside:{rate:40,yield:0.12,disc:30,price:300,rock:15,spread:8,mrv:650,fixed:45000},
+    floor:{rate:40,yield:0.12,disc:30,price:60,rock:15,spread:8,mrv:480,fixed:30000}
+  };
+  var ctls={};
+  document.querySelectorAll('.ctl').forEach(function(el){
+    var key=el.dataset.c, range=el.querySelector('input[type=range]'), numi=el.querySelector('.val input');
+    var cfg={min:+el.dataset.min,max:+el.dataset.max,step:+el.dataset.step,dec:+el.dataset.dec};
+    range.min=cfg.min;range.max=cfg.max;range.step=cfg.step;
+    ctls[key]={range:range,num:numi,cfg:cfg};
+    range.addEventListener('input',function(){state[key]=clamp(+range.value,cfg);syncOne(key);calc();});
+    numi.addEventListener('input',function(){var v=parseFloat(numi.value.replace(/[, ]/g,''));if(isNaN(v))return;state[key]=clamp(v,cfg);range.value=state[key];calc();});
+    numi.addEventListener('blur',function(){syncOne(key);});
+  });
+  function clamp(v,c){return Math.min(c.max,Math.max(c.min,v));}
+  function fmtNum(k){var c=ctls[k].cfg;var v=state[k];if(k==='fixed'||k==='setup')return Math.round(v).toLocaleString('en-US');return v.toFixed(c.dec);}
+  function syncOne(k){ctls[k].range.value=state[k];ctls[k].num.value=fmtNum(k);}
+  function syncAll(){Object.keys(ctls).forEach(syncOne);}
+  var eur=function(n){return '€'+Math.round(n).toLocaleString('en-US');};
+  function eurC(n){var a=Math.abs(n),s=n<0?'−':'';if(a>=1e6)return s+'€'+(a/1e6).toFixed(2)+'M';if(a>=1e3)return s+'€'+Math.round(a/1e3)+'k';return s+'€'+Math.round(a);}
+  function tC(n){var a=Math.abs(n);if(a>=1e6)return (a/1e6).toFixed(2)+'M t';if(a>=1e3)return Math.round(a/1e3)+'k t';return Math.round(a)+' t';}
+  function set(id,v){document.getElementById(id).textContent=v;}
+  document.querySelectorAll('.preset').forEach(function(b){b.addEventListener('click',function(){var p=presets[b.dataset.preset];Object.keys(p).forEach(function(k){state[k]=p[k];});syncAll();calc();});});
+
+  function perHa(s){
+    var co2=s.rate*s.yield*(1-s.disc/100);
+    var rev=co2*s.price;
+    var vcost=s.rate*s.rock + s.rate*s.spread + s.mrv;
+    return {co2:co2,rev:rev,vcost:vcost,vm:rev-vcost,cpc:co2>0?vcost/co2:0};
+  }
+  var TIERS=[
+    {t:"Roadside corridor (EuroScut)"},
+    {ha:1},{ha:50},{ha:200},{ha:400},
+    {t:"Aggregated dairy pasture"},
+    {ha:500},{ha:2000},
+    {t:"Pan-Azores (illustrative)"},
+    {ha:10000}
+  ];
+  function calc(){
+    var s=state, u=perHa(s);
+    set('o-perha',u.co2.toFixed(1));
+    set('o-vm',Math.round(u.vm).toLocaleString('en-US'));
+    set('o-cpc',eur(u.cpc));
+    var beEl=document.getElementById('o-beven'), bn=document.getElementById('o-bnote');
+    if(u.vm>0){var be=s.fixed/u.vm; beEl.textContent=be<1?be.toFixed(1):Math.round(be).toLocaleString('en-US'); bn.textContent="Below this the fixed audit and baseline outweigh the margin, so the land is a research plot, not a credit business. Above it, every hectare adds profit.";}
+    else {beEl.textContent="never"; bn.textContent="Each hectare loses money before fixed costs even count, usually because the price is too low or the yield too weak. Fix those before scale matters.";}
+    var body=document.getElementById('scaleBody'); body.innerHTML='';
+    TIERS.forEach(function(r){
+      if(r.t){var h=document.createElement('tr');h.className='tierhead';h.innerHTML='<td colspan="6">'+r.t+'</td>';body.appendChild(h);return;}
+      var basalt=r.ha*s.rate, co2=r.ha*u.co2, rev=r.ha*u.rev, cost=r.ha*u.vcost+s.fixed, mar=rev-cost;
+      var tr=document.createElement('tr');
+      var haLabel=r.ha>=1000?(r.ha/1000)+'k ha':r.ha+' ha';
+      tr.innerHTML='<td>'+haLabel+'</td><td>'+tC(basalt)+'</td><td>'+tC(co2)+'</td><td>'+eurC(rev)+'</td><td>'+eurC(cost)+'</td><td class="'+(mar>=0?'pos':'neg')+'">'+eurC(mar)+'</td>';
+      body.appendChild(tr);
+    });
+    var flag=document.getElementById('o-flag');
+    if(u.vm<=0){flag.style.display='block';flag.textContent='No hectare pays for itself at this price and yield. This is the roadside/unverified trap: without a verified premium price, area cannot save you.';}
+    else{var be=s.fixed/u.vm; if(be>=400){flag.style.display='block';flag.textContent='Break-even is above the entire EuroScut corridor, so the corridor is a validation plot; the first profitable project is the aggregated pasture tier.';}
+      else{flag.style.display='block';flag.textContent='Break-even at ~'+Math.round(be)+' ha. The upper corridor and all pasture tiers clear it; the smallest roadside patches do not.';}}
+  }
+  syncAll(); calc();
+})();
+</script>
+</body>
+</html>
